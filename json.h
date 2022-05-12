@@ -252,8 +252,6 @@ namespace ly {
 	}
 
 } // namespace ly
-
-
 string 写入(string Pwd, string Account)
 {
 	ly::Sha256 sha256;
@@ -284,6 +282,76 @@ string 写入(string Pwd, string Account)
     Json::FastWriter fw;
     a = fw.write(root);
     return a;
+}
+string sha256(char* buffer) {
+	ly::Sha256 sha256;
+	string encryptHexText1 = sha256.getHexMessageDigest(buffer);
+	transform(encryptHexText1.begin(), encryptHexText1.end(), encryptHexText1.begin(), tolower);
+	return encryptHexText1;
+}
+string filenametojson(string filename,string sha256filecontent, string size,string attach) {
+	string a;
+	string type = "File";
+	string Type = "New";
+	//根节点
+	Json::Value root;
+
+	//根节点属性
+	root["Type"] = Json::Value(type);
+
+	//子节点
+	Json::Value Info;
+
+	//子节点属性
+	Info["Size"] = Json::Value(size);
+	Info["Args"] = Json::Value(attach);
+	Info["Sha"] = Json::Value(sha256filecontent);
+	Info["Filename"] = Json::Value(filename);
+	Info["Type"] = Json::Value(Type);
+
+
+	//子节点挂到根节点上
+	root["Info"] = Json::Value(Info);
+
+
+	//直接输出
+	Json::FastWriter fw;
+	a = fw.write(root);
+	return a;
+}
+string filenameReturntojson(const string backmessage) {
+	Json::Reader reader;
+	Json::Value root;
+    
+	if (reader.parse(backmessage, root)) {
+		const Json::Value detail = root["Info"].asString();
+		string Type = detail["Type"].asString();
+		string result = detail["Status"].asString();
+		return result;
+	}
+}
+string filenameReturntojsonSuccess(string backmessage){
+Json::Reader reader;
+Json::Value root;
+
+if (reader.parse(backmessage, root)) {
+	const Json::Value detail = root["Info"].asString();
+	string Type = detail["Type"].asString();
+	string result = detail["Status"].asString();
+	return result;
+}
+}
+string filenameReturntojsonError(string backmessage) {
+	Json::Reader reader;
+	Json::Value root;
+
+	if (reader.parse(backmessage, root)) {
+		const Json::Value detail = root["Info"].asString();
+		string Type = detail["Type"].asString();
+		string result = detail["Status"].asString();
+		string Error = detail["Error"].asString();
+		return Error;
+	}
 }
 string changetoJsonprivate(string message,string to) {
     string a;
