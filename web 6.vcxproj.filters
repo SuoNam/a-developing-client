@@ -35,5 +35,8 @@
     <ClInclude Include="sha256.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\Tobinarry\base.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

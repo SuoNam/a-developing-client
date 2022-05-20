@@ -172,14 +172,14 @@ namespace ly {
 			_words->resize(64);
 
 			auto& words = *_words;
-			for (int i = 0; i < 16; ++i)
+			for (long long i = 0; i < 16; ++i)
 			{
 				words[i] = (static_cast<uint32_t>(chunk[i * 4]) << 24)
 					| (static_cast<uint32_t>(chunk[i * 4 + 1]) << 16)
 					| (static_cast<uint32_t>(chunk[i * 4 + 2]) << 8)
 					| static_cast<uint32_t>(chunk[i * 4 + 3]);
 			}
-			for (int i = 16; i < 64; ++i)
+			for (long long i = 16; i < 64; ++i)
 			{
 				words[i] = small_sigma1(words[i - 2])
 					+ words[i - 7]
@@ -324,9 +324,8 @@ string filenameReturntojson(const string backmessage) {
 	Json::Value root;
     
 	if (reader.parse(backmessage, root)) {
-		const Json::Value detail = root["Info"].asString();
-		string Type = detail["Type"].asString();
-		string result = detail["Status"].asString();
+		string Type = root["Info"]["Type"].asString();
+		string result = root["Info"]["Status"].asString();
 		return result;
 	}
 }
@@ -352,6 +351,63 @@ string filenameReturntojsonError(string backmessage) {
 		string Error = detail["Error"].asString();
 		return Error;
 	}
+}
+string Appandjson(string sha256filecontent) {
+	string a;
+	string Type = "Append";
+	string type = "File";
+	//根节点
+	Json::Value root;
+
+	//根节点属性
+	root["Type"] = Json::Value(type);
+
+	//子节点
+	Json::Value Info;
+
+	//子节点属性
+	Info["Sha"] = Json::Value(sha256filecontent);
+	Info["Type"] = Json::Value(Type);
+
+
+	//子节点挂到根节点上
+	root["Info"] = Json::Value(Info);
+
+
+	//直接输出
+	Json::FastWriter fw;
+	a = fw.write(root);
+	return a;
+	;
+}
+string competetjson(string sha256file) {
+	string a;
+	string Type = "Complete";
+	string type = "File";
+	//根节点
+	Json::Value root;
+
+	//根节点属性
+	root["Type"] = Json::Value(type);
+
+	//子节点
+	Json::Value Info;
+
+	//子节点属性
+	Info["Sha"] = Json::Value(sha256file);
+	Info["Type"] = Json::Value(Type);
+
+
+	//子节点挂到根节点上
+	root["Info"] = Json::Value(Info);
+
+
+	//直接输出
+	Json::FastWriter fw;
+	a = fw.write(root);
+	return a;
+	;
+
 }
 string changetoJsonprivate(string message,string to) {
     string a;
@@ -425,8 +481,9 @@ string const back(const string message) {
     Json::Reader reader;
     Json::Value root;
     if (reader.parse(message, root)) {
+		const string status = root["Info"]["Status"].asString();
         string Type = root["Type"].asString();
-        const string status = root["Status"].asString();
+        //const string status = detail["Status"].asString();
         return status;
     }
 
@@ -467,6 +524,7 @@ const string exchange(const string message) {
     Json::Reader reader;
     Json::Value root;
     if (reader.parse(message, root)) {
+		
          const string Type = root["Type"].asString();
         return Type;
     }

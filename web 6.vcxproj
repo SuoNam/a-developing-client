@@ -157,6 +157,7 @@
     <ClCompile Include="主程序.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Tobinarry\base.h" />
     <ClInclude Include="json.h" />
     <ClInclude Include="sha256.h" />
   </ItemGroup>
