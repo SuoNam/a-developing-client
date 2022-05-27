@@ -19,6 +19,7 @@
 #include <condition_variable>
 #include <thread>
 #include"base.h"
+#define BUFFER_SIZE                1024
 using std::cout;
 using namespace::std;
 using std::cout;
@@ -27,20 +28,19 @@ using std::string;
 using std::endl;
 std::mutex mut;
 std::condition_variable data_cond;
+typedef websocketpp::client<websocketpp::config::asio_client> client;
 void notify() {
 	 
 		std::lock_guard<std::mutex> lk(mut);
 		data_cond.notify_all();
 }
-void wait(int* verify) {
+void wait(int*verify) {
 	std::unique_lock<std::mutex> lk(mut);
 	data_cond.wait(lk, [&] {return ( *verify==1 || *verify==2); });
 	lk.unlock();
-	
-
 }
 
-typedef websocketpp::client<websocketpp::config::asio_client> client;
+
 
 class connection_metadata {
 public:
@@ -93,7 +93,7 @@ public:
 	}
 	void compare1(const string msg) {
 	
- /*if (msg == "1") {
+ if (msg == "1") {
 			cout << "\n" << "失败" << endl;
 			Sleep(1000);
 			verify = 2;
@@ -106,8 +106,8 @@ public:
 			notify();
 			verify = 1;
 
-		}*/
- 
+		}
+ /*
 		const string rt = exchange(msg);
 		if (rt == "Signin") {
 			const string status = back(msg);
@@ -137,7 +137,7 @@ public:
 				error = filenameReturntojsonError(msg);
 				fileverify = 2;
 			}
-		}
+		}*/
 	}
 	websocketpp::connection_hdl get_hdl() const {
 		return m_hdl;
@@ -357,33 +357,46 @@ int main() {
 
 		std::cout << "> 您的连接为第  " << id << "个" << std::endl;
 	}
-	r:string d = "登入 0";
-		std::stringstream ss(d);
-		std::cout << endl << "输入账号:";
-		std::getline(std::cin, 账号);
-		std::cout << endl << "输入密码:";
-		std::getline(std::cin, 密码);
-		string g = 写入(密码, 账号);
-		std::string cmd;
-		std::string failure3 = writefailure3();
-		int a;
-		ss >> cmd >> a;
-	
-		endpoint.send(a, g);
-		connection_metadata::ptr m = endpoint.get_metadata(id);
-		int* p=&(*m).verify;
-		wait(p);
-		if ((*m).verify == 2) {
-			goto r;
+	connection_metadata::ptr m = endpoint.get_metadata(id);
+	q:cout <<endl<< "你要执行什么（登入or注册）：";
+	     string order = "0";
+		 std::getline(std::cin,order);
+		if (order == "登入") {
+			int which = 0;
+			string orderwhich = order + " " + to_string(which);
+		r:std::stringstream ss(orderwhich);
+			std::cout << endl << "输入账号:";
+			std::getline(std::cin, 账号);
+			std::cout << endl << "输入密码:";
+			std::getline(std::cin, 密码);
+			string g = 写入(密码, 账号);
+			std::string cmd;
+			int a;
+			ss >> cmd >> a;
+			endpoint.send(a, g);
+			/*int* p = &(*m).verify;
+			wait(p);
+			if ((*m).verify == 2) {
+				goto r;
+			}
+			(*m).verify=3;*/
 		}
-		
-		/*while ((*m).verify == 3) {
-			Sleep(100);
+		else if (order == "注册") {
+			string z = "123";
+			cout << "Sorry!帅气的索先生还没有完成此功能，请敬请期待。" << endl;
+			cout << "请您输入sjkzs结束程序or输入返回重新尝试其他内容" << endl;
+			std::getline(cin, z);
+			if (z == "sjkzs") {
+				return 0;
+			}
+			else if (z == "返回") {
+				goto q;
+			}
+			else {
+				cout << "你不乖啊！";
+				   std::unique_lock<std::mutex> lk(mut);
+			}
 		}
-		if ((*m).verify == 2) {
-			(*m).verify = 3;
-			goto r;
-		}*/
 		/*auto resp2 = requests::post("http://starlink.vaiwan.com/api/query/userPublicInfo", "{ \"account\":\"ST\" }");
 		if (resp2 == NULL) {
 			printf("请求失败\n");
@@ -432,66 +445,81 @@ int main() {
 				in.seekg(0, ios::beg);
 				char* buffer = new char[size];//创建buffer
 				in.read(buffer, size);//读文件in，（以二进制形式）
+				in.close();
 				string filecontentsha256 = sha256(buffer);//把文件内容sha256编码
 				string size1 = to_string(size);
 				string filejsonfirstsend = filenametojson(file_name, filecontentsha256, size1, attach);//写成New json格式
 				long long length = filejsonfirstsend.size();//获取需base64的大小
-				unsigned char*filejsonfirstsendchar = (unsigned char*)filejsonfirstsend.c_str();
-				string filejsonfirstout= base64_encode(filejsonfirstsendchar, length);
+				unsigned char* filejsonfirstsendchar = (unsigned char*)filejsonfirstsend.c_str();
+				string filejsonfirstout = base64_encode(filejsonfirstsendchar, length);
 				string among = "|";
 				string filesendmessage = filejsonfirstout + among;
 				int sz = filesendmessage.size();
-				endpoint.sendFile(id, filesendmessage.c_str(),sz);
-				int* pfile = &(*m).fileverify;
+				endpoint.sendFile(id, filesendmessage.c_str(), sz);
+				/*int* pfile = &(*m).fileverify;
 				wait(pfile);
 				if ((*m).fileverify == 2) {
 					cout << (*m).error << endl;
 				}
+				(*m).fileverify = 3;*/
 				//传输文件append
 				string appendfilejson = Appandjson(filecontentsha256);
 				int lengthappend = appendfilejson.size();
 				unsigned char* appendfilejsonunsignedchar;
 				appendfilejsonunsignedchar = (unsigned char*)(appendfilejson.c_str());
-				string appendfilejsonchar=base64_encode(appendfilejsonunsignedchar, lengthappend);
-				//string transit = buffer;
-				//long long count1 = 0;
-				//long long size2 = transit.size();
-				/*if (size >= 1048576) {
-					while (count1 <=size2  + 1) {
-						
-						string partbuffer = transit.substr(count1, count1 + 1);
-						string fileapendsendmessage = appendfilejsonchar + among + partbuffer;
-						long size3=fileapendsendmessage.size();
-						endpoint.sendFile(id, fileapendsendmessage.c_str(),size3);
-						count1=+2;
+				string appendfilejsonchar = base64_encode(appendfilejsonunsignedchar, lengthappend);
+				char buffer1[BUFFER_SIZE];
+				FILE* fp;
+				errno_t err;
+				fopen_s(&fp, file_name.c_str(), "rb");
+				if (fp == NULL) {
+					cout << file_name << "open error" << endl;
+					return 0;
+				}
+				int file_block_length = 0;
+				int t = 1;
+				while (1)
+				{
+					memset(buffer1, 0, 1024);
+					file_block_length = fread(buffer1, 1, BUFFER_SIZE, fp);
+					if (file_block_length > 0) {
+						string Sendmessagefileappend = appendfilejsonchar + among + buffer1;
+						long size3 = Sendmessagefileappend.size();
+						endpoint.sendFile(id, Sendmessagefileappend.c_str(), size3);
+						cout << buffer1 << endl;
+						cout << t << endl;
+						t++;
+						/*wait(pfile);
+						if ((*m).fileverify == 2) {
+							cout << (*m).error << endl;
+						}
+						(*m).fileverify = 3;*/
+					}
+					else {
+						break;
 					}
 				}
-				else {
-					string Sendmessagefileappend = appendfilejsonchar + among + buffer;
-					long long size2 = Sendmessagefileappend.size();
-					endpoint.sendFile(id,Sendmessagefileappend.c_str(),size2);
-					cout << Sendmessagefileappend << endl;
-				}
-				*/
-				string Sendmessagefileappend = appendfilejsonchar + among + buffer;
+				fclose(fp);
+				/*string Sendmessagefileappend = appendfilejsonchar + among + buffer;
 				long size3 = Sendmessagefileappend.size();
 				endpoint.sendFile(id, Sendmessagefileappend.c_str(), size3);
 				wait(pfile);
 				if ((*m).fileverify == 2) {
 					cout << (*m).error << endl;
 				}
+				(*m).fileverify = 3;*/
 				//Complete
 				string Completemessageuncomplete = competetjson(filecontentsha256);
 				int sizecomplete = Completemessageuncomplete.size();
 				const unsigned char* Completemessageuncompletechar = (const unsigned char*)Completemessageuncomplete.c_str();
-				string Completemessage = base64_encode(Completemessageuncompletechar, sizecomplete)+among;
+				string Completemessage = base64_encode(Completemessageuncompletechar, sizecomplete) + among;
 				int szo = Completemessage.size();
-				endpoint.sendFile(id, Completemessage.c_str(),szo);
-				wait(pfile);
+				endpoint.sendFile(id, Completemessage.c_str(), szo);
+				/*wait(pfile);
 				if ((*m).fileverify == 2) {
 					cout << (*m).error << endl;
 				}
-				in.close();
+				(*m).fileverify = 3;*/
 			}
 			else if (input.substr(0, 4) == "关闭") {
 				std::stringstream ss(input);
