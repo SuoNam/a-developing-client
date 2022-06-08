@@ -2,7 +2,6 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/common/thread.hpp>
 #include <websocketpp/common/memory.hpp>
-#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <string>
@@ -83,31 +82,35 @@ public:
 	void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
 		if (msg->get_opcode() == websocketpp::frame::opcode::text) {
 			m_messages.push_back("<< " + msg->get_payload());
-			compare1(msg->get_payload());
+			messagejudgment(msg->get_payload());
+			
+		}
+		else if(msg->get_opcode()== websocketpp::frame::opcode::binary) {
+			filejudgment(msg->get_payload());
 			
 		}
 		else {
-			m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
-			
+			cout <<endl<< "消息类型:" << msg->get_opcode() << "未被设计如何处理" << endl;
+			cout << "消息内容:" << msg->get_payload() << endl;
 		}
 	}
-	void compare1(const string msg) {
-	
- if (msg == "1") {
-			cout << "\n" << "失败" << endl;
-			Sleep(1000);
-			verify = 2;
+	void messagejudgment(const string msg) {
+	/*
+	 if (msg == "1") {
+				cout << "\n" << "失败" << endl;
+				Sleep(1000);
+				verify = 2;
 
-		}
-		else {
-	        
-			cout << "\n" << "登入成功" << endl;
-			Sleep(1000);
-			notify();
-			verify = 1;
+			}
+			else {
 
-		}
- /*
+				cout << "\n" << "登入成功" << endl;
+				Sleep(1000);
+				notify();
+				verify = 1;
+
+			}*/
+	 
 		const string rt = exchange(msg);
 		if (rt == "Signin") {
 			const string status = back(msg);
@@ -123,10 +126,10 @@ public:
 			}
 		}
 
-	     else if (rt == "Message") {
+		else if (rt == "Message") {
 			cout << msg << endl;
 		}
-		 else if (rt == "File") {
+		else if (rt == "File") {
 			string backmessage = filenameReturntojson(msg);
 			if (backmessage == "Success") {
 				notify();
@@ -137,7 +140,25 @@ public:
 				error = filenameReturntojsonError(msg);
 				fileverify = 2;
 			}
-		}*/
+		}
+		else if(rt=="Signup"){
+		   const string status = signupreturnstatus(msg);
+		   if (status == "Success") {
+			   notify();
+			   verify = 1;
+			   cout <<endl<< "注册成功";
+		   }
+		   else {
+			   notify();
+			   verify = 2;
+			   cout<< endl << "注册失败";
+			   cout << endl << "失败原因:" << signupreturnError(msg);
+		   }
+		}
+		
+	}
+	void filejudgment(string binarymessage) {
+
 	}
 	websocketpp::connection_hdl get_hdl() const {
 		return m_hdl;
@@ -279,7 +300,7 @@ public:
 
 		con_list::iterator metadata_it = m_connection_list.find(id);
 		if (metadata_it == m_connection_list.end()) {
-			std::cout << "> No connection found with id " << id << std::endl;
+			std::cout << "没有发现连接： " << id << std::endl;
 			return;
 		}
 
@@ -295,7 +316,7 @@ public:
 
 		con_list::iterator metadata_it = m_connection_list.find(id);
 		if (metadata_it == m_connection_list.end()) {
-			std::cout << "> No connection found with id " << id << std::endl;
+			std::cout << "没有发现连接: " << id << std::endl;
 			return;
 		}
 
@@ -364,7 +385,7 @@ int main() {
 		if (order == "登入") {
 			int which = 0;
 			string orderwhich = order + " " + to_string(which);
-		r:std::stringstream ss(orderwhich);
+			r: std::stringstream ss(orderwhich);
 			std::cout << endl << "输入账号:";
 			std::getline(std::cin, 账号);
 			std::cout << endl << "输入密码:";
@@ -374,28 +395,50 @@ int main() {
 			int a;
 			ss >> cmd >> a;
 			endpoint.send(a, g);
-			/*int* p = &(*m).verify;
+			int* p = &(*m).verify;
 			wait(p);
 			if ((*m).verify == 2) {
 				goto r;
 			}
-			(*m).verify=3;*/
+			(*m).verify=3;
 		}
 		else if (order == "注册") {
-			string z = "123";
-			cout << "Sorry!帅气的索先生还没有完成此功能，请敬请期待。" << endl;
-			cout << "请您输入sjkzs结束程序or输入返回重新尝试其他内容" << endl;
-			std::getline(cin, z);
-			if (z == "sjkzs") {
-				return 0;
+			while (1) {
+				std::string 账号signup;
+				std::string 密码signup;
+				string 账号确认;
+				string 密码确认;
+				std::cout << endl << "输入准备申请的账号:";
+				std::getline(std::cin, 账号signup);
+				std::cout << endl << "再次输入账号:";
+				std::getline(std::cin, 账号确认);
+				if (账号signup == 账号确认) {
+					std::cout << endl << "输入密码:";
+					std::getline(std::cin, 密码signup);
+					std::cout << endl << "再次输入密码:";
+					std::getline(std::cin, 密码确认);
+					if (密码确认 == 密码signup) {
+						string signupmessage = signup(密码signup, 账号signup);
+						endpoint.send(id, signupmessage);
+						int* signupp = &(*m).verify;
+						wait(signupp);
+						if ((*m).verify == 2) {
+							goto q;
+						}
+						(*m).verify = 3;
+						goto q;
+					}
+					else {
+						cout << "两次密码输入不一致" << endl;
+					}
+				}
+				else {
+					cout << "两次账号输入不一致" << endl;
+				}
+
 			}
-			else if (z == "返回") {
-				goto q;
-			}
-			else {
-				cout << "你不乖啊！";
-				   std::unique_lock<std::mutex> lk(mut);
-			}
+
+			
 		}
 		/*auto resp2 = requests::post("http://starlink.vaiwan.com/api/query/userPublicInfo", "{ \"account\":\"ST\" }");
 		if (resp2 == NULL) {
@@ -456,12 +499,12 @@ int main() {
 				string filesendmessage = filejsonfirstout + among;
 				int sz = filesendmessage.size();
 				endpoint.sendFile(id, filesendmessage.c_str(), sz);
-				/*int* pfile = &(*m).fileverify;
+				int* pfile = &(*m).fileverify;
 				wait(pfile);
 				if ((*m).fileverify == 2) {
 					cout << (*m).error << endl;
 				}
-				(*m).fileverify = 3;*/
+				(*m).fileverify = 3;
 				//传输文件append
 				string appendfilejson = Appandjson(filecontentsha256);
 				int lengthappend = appendfilejson.size();
@@ -470,44 +513,57 @@ int main() {
 				string appendfilejsonchar = base64_encode(appendfilejsonunsignedchar, lengthappend);
 				char buffer1[BUFFER_SIZE];
 				FILE* fp;
-				errno_t err;
+				FILE* out;
 				fopen_s(&fp, file_name.c_str(), "rb");
 				if (fp == NULL) {
 					cout << file_name << "open error" << endl;
 					return 0;
 				}
+				fopen_s(&out,"本地写入（测试使用）.txt", "wb");
+				if (fp == NULL) {
+					cout <<"本地写入（测试使用). txt" << "create error" << endl;
+					return 0;
+				}
 				int file_block_length = 0;
 				int t = 1;
+				int mlength = appendfilejsonchar.size() + among.size() + sizeof(buffer1);
+				char* message = (char*)malloc(mlength);
 				while (1)
 				{
-					memset(buffer1, 0, 1024);
 					file_block_length = fread(buffer1, 1, BUFFER_SIZE, fp);
-					if (file_block_length > 0) {
-						string Sendmessagefileappend = appendfilejsonchar + among + buffer1;
-						long size3 = Sendmessagefileappend.size();
-						endpoint.sendFile(id, Sendmessagefileappend.c_str(), size3);
-						cout << buffer1 << endl;
+					
+					if (file_block_length > 0&&size>=1024) {
+						size = size - 1024;
+						memcpy(message, appendfilejsonchar.c_str(),appendfilejsonchar.size());
+						memcpy(message+appendfilejsonchar.size(), among.c_str(),among.size());
+						memcpy(message +appendfilejsonchar.size()+ among.size(), buffer1, sizeof(buffer1));
+						endpoint.sendFile(id,message,mlength);
 						cout << t << endl;
 						t++;
-						/*wait(pfile);
+						memset(buffer1, 0, sizeof(buffer1));
+						memset(message, 0, mlength);
+						wait(pfile);
 						if ((*m).fileverify == 2) {
 							cout << (*m).error << endl;
 						}
-						(*m).fileverify = 3;*/
+						(*m).fileverify = 3;
+					}
+					else if(file_block_length > 0&&0<size<1024)
+					{
+						long leftoversize = appendfilejsonchar.size() + among.size() + size;
+						char* leftovermessage = (char*)malloc(leftoversize);
+						memcpy(leftovermessage, appendfilejsonchar.c_str(), appendfilejsonchar.size());
+						memcpy(leftovermessage + appendfilejsonchar.size(), among.c_str(), among.size());
+						memcpy(leftovermessage + appendfilejsonchar.size() + among.size(), buffer1, size);
+						endpoint.sendFile(id,leftovermessage, leftoversize);
 					}
 					else {
 						break;
 					}
+
 				}
+				fclose(out);
 				fclose(fp);
-				/*string Sendmessagefileappend = appendfilejsonchar + among + buffer;
-				long size3 = Sendmessagefileappend.size();
-				endpoint.sendFile(id, Sendmessagefileappend.c_str(), size3);
-				wait(pfile);
-				if ((*m).fileverify == 2) {
-					cout << (*m).error << endl;
-				}
-				(*m).fileverify = 3;*/
 				//Complete
 				string Completemessageuncomplete = competetjson(filecontentsha256);
 				int sizecomplete = Completemessageuncomplete.size();
@@ -515,11 +571,12 @@ int main() {
 				string Completemessage = base64_encode(Completemessageuncompletechar, sizecomplete) + among;
 				int szo = Completemessage.size();
 				endpoint.sendFile(id, Completemessage.c_str(), szo);
-				/*wait(pfile);
+				wait(pfile);
 				if ((*m).fileverify == 2) {
 					cout << (*m).error << endl;
+					return -1;
 				}
-				(*m).fileverify = 3;*/
+				(*m).fileverify = 3;
 			}
 			else if (input.substr(0, 4) == "关闭") {
 				std::stringstream ss(input);

@@ -283,6 +283,55 @@ string 写入(string Pwd, string Account)
     a = fw.write(root);
     return a;
 }
+string signup(string Pwd, string Account)
+{
+	ly::Sha256 sha256;
+	string encryptHexText1 = sha256.getHexMessageDigest(Pwd);
+	transform(encryptHexText1.begin(), encryptHexText1.end(), encryptHexText1.begin(), tolower);
+	string a;
+	string type = "Signup";
+	//根节点
+	Json::Value root;
+
+	//根节点属性
+	root["Type"] = Json::Value(type);
+
+	//子节点
+	Json::Value Info;
+
+	//子节点属性
+	Info["Account"] = Json::Value(Account);
+	Info["Pwd"] = Json::Value(encryptHexText1);
+
+
+
+	//子节点挂到根节点上
+	root["Info"] = Json::Value(Info);
+
+
+	//直接输出
+	Json::FastWriter fw;
+	a = fw.write(root);
+	return a;
+}
+string signupreturnstatus(string returnmessage){
+	Json::Reader reader;
+	Json::Value root;
+	if (reader.parse(returnmessage, root)) {
+		const string status = root["Status"].asString();
+		string Type = root["Type"].asString();
+		//const string status = detail["Status"].asString();
+		return status;
+	}
+}
+string signupreturnError(string returnmessage) {
+	Json::Reader reader;
+	Json::Value root;
+	if (reader.parse(returnmessage, root)) {
+		const string Error = root["Error"].asString();
+		return Error;
+	}
+}
 string sha256(char* buffer) {
 	ly::Sha256 sha256;
 	string encryptHexText1 = sha256.getHexMessageDigest(buffer);
@@ -335,8 +384,8 @@ Json::Value root;
 
 if (reader.parse(backmessage, root)) {
 	const Json::Value detail = root["Info"].asString();
-	string Type = detail["Type"].asString();
-	string result = detail["Status"].asString();
+	string Type = root["Info"]["Type"].asString();
+	string result = detail["Info"]["Status"].asString();
 	return result;
 }
 }
@@ -345,10 +394,10 @@ string filenameReturntojsonError(string backmessage) {
 	Json::Value root;
 
 	if (reader.parse(backmessage, root)) {
-		const Json::Value detail = root["Info"].asString();
-		string Type = detail["Type"].asString();
-		string result = detail["Status"].asString();
-		string Error = detail["Error"].asString();
+		string Type = root["Type"].asString();
+		string result = root["Info"]["Status"].asString();
+		string Error = root["Info"]["Error"].asString();
+		string type = root["Info"]["Type"].asString();
 		return Error;
 	}
 }
